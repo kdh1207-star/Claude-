@@ -719,7 +719,7 @@ class WidgetRenderer(context: Context) {
                 letterSpacing = s.letterSpacing
             }
 
-            fun setSize(px: Float) { size = px; paint.textSize = px }
+            fun resize(px: Float) { size = px; paint.textSize = px }
             fun width(): Float {
                 if (divider) return 0f
                 var total = 0f
@@ -785,11 +785,11 @@ class WidgetRenderer(context: Context) {
             val gapRatio = 0.035f
             // 1) 기본 크기 + 너비에 맞추기
             for (l in lines) {
-                l.setSize(area.height() * l.ratio)
+                l.resize(area.height() * l.ratio)
                 if (!l.divider) {
                     val effectPad = effectPadding(l.size)
                     val wv = l.width() + effectPad * 2
-                    if (wv > area.width()) l.setSize(l.size * area.width() / wv)
+                    if (wv > area.width()) l.resize(l.size * area.width() / wv)
                 }
             }
             // 2) 높이에 맞추기
@@ -797,7 +797,7 @@ class WidgetRenderer(context: Context) {
             var total = lines.sumOf { it.height().toDouble() }.toFloat() + gap * (lines.size - 1)
             if (total > area.height()) {
                 val k = area.height() / total
-                lines.forEach { it.setSize(it.size * k) }
+                lines.forEach { it.resize(it.size * k) }
                 total = area.height()
             }
             // 3) 그리기
