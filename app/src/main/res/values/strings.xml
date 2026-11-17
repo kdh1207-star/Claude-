@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">디데이 포지</string>
+    <string name="widget_name">디데이</string>
+    <string name="widget_description">만들어 둔 디데이를 원하는 테마로 표시합니다</string>
+</resources>
