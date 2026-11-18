@@ -17,13 +17,25 @@ android {
         versionName = "1.0.0"
     }
 
+    signingConfigs {
+        // 저장소에 들어 있는 고정 키. 빌드할 때마다 같은 서명이 되어야 폰에서 업데이트 설치가 된다.
+        create("fixed") {
+            storeFile = file("ddayforge.keystore")
+            storePassword = "ddayforge"
+            keyAlias = "ddayforge"
+            keyPassword = "ddayforge"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("fixed")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // 개인 설치용: 디버그 키로 서명해서 바로 설치 가능하게 함
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("fixed")
         }
     }
     compileOptions {
