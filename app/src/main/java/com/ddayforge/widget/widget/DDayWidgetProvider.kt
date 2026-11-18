@@ -74,18 +74,53 @@ class DDayWidgetProvider : AppWidgetProvider() {
             return maxOf(sys, 20f)
         }
 
-        /** 현재 위젯 크기(dp). 세로 모드 기준: 최소 너비 x 최대 높이 */
+        /** 현재 위젯 크기(dp). 세로 모드 기준: 최소 너비 x 최대 높이 (비율 기준으로 씀) */
         fun widgetSizeDp(manager: AppWidgetManager, id: Int): Pair<Float, Float> {
             val o = manager.getAppWidgetOptions(id)
             var w = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).toFloat()
             var h = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).toFloat()
-            if (Build.VERSION.SDK_INT >= 31) {
-                @Suppress("DEPRECATION")
-                val sizes = o.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
-                sizes?.firstOrNull()?.let { w = it.width; h = it.height }
+            if ((w <= 0f || h <= 0f) && Build.VERSION.SDK_INT >= 31) {
+                reportedSizes(manager, id).firstOrNull()?.let { w = it.width; h = it.height }
             }
             if (w <= 0f || h <= 0f) { w = 180f; h = 80f }
             return w to h
+        }
+
+        private fun reportedSizes(manager: AppWidgetManager, id: Int): List<SizeF> {
+            if (Build.VERSION.SDK_INT < 31) return emptyList()
+            @Suppress("DEPRECATION")
+            return manager.getAppWidgetOptions(id).getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES) ?: emptyList()
+        }
+
+        /**
+         * 런처가 알려 주는 크기들 중 가장 큰 것까지 덮으려면 기준 크기에서 몇 배로 그려야 하는지.
+         * (런처가 실제로는 더 크게 보여 주면 비트맵이 늘어나 흐려지기 때문)
+         */
+        fun coverScale(manager: AppWidgetManager, id: Int, base: Pair<Float, Float>): Float {
+            val o = manager.getAppWidgetOptions(id)
+            val candidates = reportedSizes(manager, id).map { it.width to it.height } +
+                listOf(
+                    o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH).toFloat() to o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT).toFloat(),
+                    o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH).toFloat() to o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).toFloat(),
+                )
+            var k = 1f
+            for ((cw, ch) in candidates) {
+                if (cw <= 0f || ch <= 0f) continue
+                k = maxOf(k, cw / base.first, ch / base.second)
+            }
+            return k.coerceIn(1f, 2f)
+        }
+
+        /** 여유 배율: 실제 크기보다 1.5배로 그려서 줄여 보이게 → 선명 */
+        private const val OVERSAMPLE = 1.5f
+
+        /**
+         * 위젯 하나에 넣을 수 있는 비트맵 한도(화면 픽셀 × 1.5 × 4바이트)의 절반만 쓴다.
+         * 넘으면 런처가 "위젯을 불러올 수 없음"을 띄운다.
+         */
+        fun maxWidgetPixels(context: Context): Float {
+            val dm = context.resources.displayMetrics
+            return (dm.widthPixels.toFloat() * dm.heightPixels * 1.5f * 0.5f).coerceIn(400_000f, 3_000_000f)
         }
 
         fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
@@ -97,10 +132,13 @@ class DDayWidgetProvider : AppWidgetProvider() {
                 dday == null -> WidgetContent.placeholder("디데이가 삭제됨 · 탭해서 변경")
                 else -> WidgetContent.of(dday, style)
             }
-            val (wDp, hDp) = widgetSizeDp(manager, id)
-            val density = context.resources.displayMetrics.density
+            val size = widgetSizeDp(manager, id)
+            val (wDp, hDp) = size
+            val scale = context.resources.displayMetrics.density * coverScale(manager, id, size) * OVERSAMPLE
             val bitmap = runCatching {
-                WidgetRenderer(context).render(style, content, wDp, hDp, density, systemClipDp(context))
+                WidgetRenderer(context).render(
+                    style, content, wDp, hDp, scale, systemClipDp(context), maxWidgetPixels(context),
+                )
             }.getOrNull()
 
             val views = RemoteViews(context.packageName, R.layout.widget_dday)

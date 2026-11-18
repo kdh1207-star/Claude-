@@ -78,10 +78,10 @@ class WidgetRenderer(context: Context) {
         heightDp: Float,
         density: Float,
         systemClipDp: Float = 0f,
+        maxPixels: Float = 1_600_000f,
     ): Bitmap {
         var d = density
         // 비트맵 메모리 제한 (RemoteViews 한도 대비 여유)
-        val maxPixels = 1_600_000f
         if (widthDp * heightDp * d * d > maxPixels) d = sqrt(maxPixels / (widthDp * heightDp))
         val w = max(1, (widthDp * d).toInt())
         val h = max(1, (heightDp * d).toInt())
@@ -308,12 +308,13 @@ class WidgetRenderer(context: Context) {
                     c.drawRect(b, gp)
                 }
                 Texture.GRID -> {
-                    val p = texPaint().apply { strokeWidth = max(1f, u * 0.8f) }
-                    val step = 16f * u
-                    var x = b.left + (b.width() % step) / 2
-                    while (x < b.right) { c.drawLine(x, b.top, x, b.bottom, p); x += step }
-                    var y = b.top + (b.height() % step) / 2
-                    while (y < b.bottom) { c.drawLine(b.left, y, b.right, y, p); y += step }
+                    val p = texPaint().apply { isAntiAlias = false }
+                    val lw = max(1f, Math.round(u * 0.8f).toFloat())
+                    val step = max(4f, Math.round(16f * u).toFloat())
+                    var x = Math.round(b.left + (b.width() % step) / 2).toFloat()
+                    while (x < b.right) { c.drawRect(x, b.top, x + lw, b.bottom, p); x += step }
+                    var y = Math.round(b.top + (b.height() % step) / 2).toFloat()
+                    while (y < b.bottom) { c.drawRect(b.left, y, b.right, y + lw, p); y += step }
                 }
                 Texture.PERSPECTIVE_GRID -> {
                     val horizon = b.top + b.height() * 0.55f
@@ -492,12 +493,12 @@ class WidgetRenderer(context: Context) {
                     }
                 }
                 Texture.LCD -> {
-                    val p = texPaint()
-                    val cell = 3.5f * u
-                    val gap = max(0.6f * u, 1f)
-                    var y = b.top
+                    val p = texPaint().apply { isAntiAlias = false }
+                    val cell = max(2f, Math.round(3.5f * u).toFloat())
+                    val gap = max(1f, Math.round(0.6f * u).toFloat())
+                    var y = Math.floor(b.top.toDouble()).toFloat()
                     while (y < b.bottom) {
-                        var x = b.left
+                        var x = Math.floor(b.left.toDouble()).toFloat()
                         while (x < b.right) { c.drawRect(x, y, x + cell - gap, y + cell - gap, p); x += cell }
                         y += cell
                     }
@@ -505,12 +506,14 @@ class WidgetRenderer(context: Context) {
             }
         }
 
+        /** 픽셀 격자에 맞춘 주사선: 줄였을 때 물결무늬(모아레)가 덜 생긴다 */
         fun scanlines(u: Float) {
-            val p = texPaint()
-            val step = 3f * u
-            var y = bounds.top
+            val p = texPaint().apply { isAntiAlias = false }
+            val step = max(2f, Math.round(3f * u).toFloat())
+            val lh = max(1f, Math.round(step * 0.45f).toFloat())
+            var y = Math.floor(bounds.top.toDouble()).toFloat()
             while (y < bounds.bottom) {
-                c.drawRect(bounds.left, y, bounds.right, y + step * 0.45f, p)
+                c.drawRect(bounds.left, y, bounds.right, y + lh, p)
                 y += step
             }
         }
