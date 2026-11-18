@@ -166,7 +166,7 @@ private fun ThemeGalleryTab(presets: List<Theme>, custom: List<Theme>, sample: D
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
                 Column(Modifier.padding(8.dp)) {
                     val content = remember(sample, t.style.countFormat) { WidgetContent.of(sample, t.style) }
-                    WidgetPreview(t.style, content, 220f, 120f, displayWidth = 160.dp)
+                    WidgetPreview(t.style, content, 180f, 80f, displayWidth = 160.dp)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f).padding(top = 6.dp)) {
                             Text(t.name, style = MaterialTheme.typography.titleSmall)

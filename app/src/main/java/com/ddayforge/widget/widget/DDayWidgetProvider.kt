@@ -84,7 +84,7 @@ class DDayWidgetProvider : AppWidgetProvider() {
                 val sizes = o.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
                 sizes?.firstOrNull()?.let { w = it.width; h = it.height }
             }
-            if (w <= 0f || h <= 0f) { w = 250f; h = 120f }
+            if (w <= 0f || h <= 0f) { w = 180f; h = 80f }
             return w to h
         }
 

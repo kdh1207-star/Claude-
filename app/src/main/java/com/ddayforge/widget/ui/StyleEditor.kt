@@ -183,10 +183,11 @@ fun StyleEditor(
     val sizes = remember(actualSize) {
         listOfNotNull(
             actualSize?.let { PreviewSize("실제 크기", it.first, it.second) },
-            PreviewSize("4x2", 300f, 150f),
-            PreviewSize("3x2", 230f, 150f),
-            PreviewSize("2x2", 150f, 150f),
-            PreviewSize("4x1", 300f, 70f),
+            PreviewSize("2x1", 180f, 80f),
+            PreviewSize("3x1", 270f, 80f),
+            PreviewSize("4x1", 360f, 80f),
+            PreviewSize("2x2", 180f, 170f),
+            PreviewSize("4x2", 360f, 170f),
         )
     }
     var size by remember(sizes) { mutableStateOf(sizes.first()) }
@@ -221,7 +222,7 @@ fun StyleEditor(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 ) {
                     Column(Modifier.padding(6.dp).width(132.dp)) {
-                        WidgetPreview(t.style, content, 200f, 110f, displayWidth = 132.dp)
+                        WidgetPreview(t.style, content, 180f, 80f, displayWidth = 132.dp)
                         Text(
                             t.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.padding(top = 4.dp),

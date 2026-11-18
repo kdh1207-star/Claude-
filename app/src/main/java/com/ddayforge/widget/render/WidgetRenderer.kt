@@ -137,6 +137,13 @@ class WidgetRenderer(context: Context) {
             } else r
         }
         val radius = min(s.cornerRadius * d, min(bounds.width(), bounds.height()) / 2f)
+
+        /**
+         * 작은 위젯(예: 2x1)에서는 여백·장식이 고정 dp면 글자 들어갈 자리가 없어진다.
+         * 짧은 변 110dp를 기준으로 여백과 장식 크기를 함께 줄인다.
+         */
+        val compact = (min(bounds.width(), bounds.height()) / d / 110f).coerceIn(0.45f, 1f)
+        val dk = d * compact
         val shapePath = shapePath(bounds, radius)
 
         fun draw() {
@@ -571,13 +578,13 @@ class WidgetRenderer(context: Context) {
         // ---------------- 장식 ----------------
         /** 장식을 그리고, 텍스트가 들어갈 영역을 돌려준다. */
         fun drawDecorationAndGetContentRect(): RectF {
-            val pad = s.padding * d + bw
+            val pad = s.padding * dk + bw
             val area = if (s.shape == WidgetShape.CIRCLE) {
                 val k = bounds.width() * (1f - 1f / sqrt(2f)) / 2f
                 RectF(bounds).apply { inset(k, k) }
             } else RectF(bounds)
             if (s.shape == WidgetShape.TICKET) {
-                val nr = min(bounds.height() * 0.13f, max(radius * 0.7f, 6f * d))
+                val nr = min(bounds.height() * 0.13f, max(radius * 0.7f, 6f * dk))
                 area.inset(nr * 0.6f, 0f)
             }
             val content = RectF(area).apply { inset(pad, pad) }
@@ -587,14 +594,14 @@ class WidgetRenderer(context: Context) {
                 Decoration.NONE -> Unit
                 Decoration.CORNER_BRACKETS -> {
                     p.style = Paint.Style.STROKE
-                    p.strokeWidth = 2f * d
+                    p.strokeWidth = 2f * dk
                     p.strokeCap = Paint.Cap.SQUARE
                     val cut = when (s.shape) {
                         WidgetShape.CHAMFER, WidgetShape.ASYM_CUT -> radius * 0.75f
                         WidgetShape.ROUNDED, WidgetShape.PILL -> radius * 0.35f
                         else -> 0f
                     }
-                    val ins = bw + 5f * d + cut
+                    val ins = bw + 5f * dk + cut
                     val l = min(bounds.width(), bounds.height()) * 0.14f
                     val r = RectF(bounds).apply { inset(ins, ins) }
                     c.drawLine(r.left, r.top, r.left + l, r.top, p); c.drawLine(r.left, r.top, r.left, r.top + l, p)
@@ -603,7 +610,7 @@ class WidgetRenderer(context: Context) {
                     c.drawLine(r.right, r.bottom, r.right - l, r.bottom, p); c.drawLine(r.right, r.bottom, r.right, r.bottom - l, p)
                 }
                 Decoration.TERMINAL_BAR -> {
-                    val barH = min(20f * d, bounds.height() * 0.22f)
+                    val barH = min(20f * dk, bounds.height() * 0.22f)
                     val save = c.save()
                     c.clipPath(shapePath)
                     p.color = mulAlpha(dc, 0.16f)
@@ -613,7 +620,7 @@ class WidgetRenderer(context: Context) {
                     c.restoreToCount(save)
                     val cy = bounds.top + barH / 2
                     val r = barH * 0.18f
-                    var x = bounds.left + bw + max(radius * 0.5f, 8f * d) + r
+                    var x = bounds.left + bw + max(radius * 0.5f, 8f * dk) + r
                     for (a in floatArrayOf(1f, 0.6f, 0.3f)) {
                         p.color = mulAlpha(dc, a); c.drawCircle(x, cy, r, p); x += r * 3f
                     }
@@ -622,49 +629,49 @@ class WidgetRenderer(context: Context) {
                         textAlign = Paint.Align.CENTER
                     }
                     c.drawText("dday.sh", bounds.centerX(), cy - (tp.ascent() + tp.descent()) / 2, tp)
-                    content.top = max(content.top, bounds.top + barH + s.padding * d * 0.6f)
+                    content.top = max(content.top, bounds.top + barH + s.padding * dk * 0.6f)
                 }
                 Decoration.HUD -> {
                     p.strokeWidth = max(1f, d)
-                    val ins = bw + 4f * d + if (s.shape == WidgetShape.CHAMFER || s.shape == WidgetShape.ASYM_CUT) radius else radius * 0.4f
-                    val step = 6f * d
+                    val ins = bw + 4f * dk + if (s.shape == WidgetShape.CHAMFER || s.shape == WidgetShape.ASYM_CUT) radius else radius * 0.4f
+                    val step = 6f * dk
                     var x = bounds.left + ins
                     var i = 0
                     while (x < bounds.right - ins) {
-                        val len = if (i % 5 == 0) 6f * d else 3f * d
+                        val len = if (i % 5 == 0) 6f * dk else 3f * dk
                         p.color = mulAlpha(dc, if (i % 5 == 0) 0.9f else 0.45f)
-                        c.drawLine(x, bounds.top + bw + 3f * d, x, bounds.top + bw + 3f * d + len, p)
-                        c.drawLine(x, bounds.bottom - bw - 3f * d, x, bounds.bottom - bw - 3f * d - len, p)
+                        c.drawLine(x, bounds.top + bw + 3f * dk, x, bounds.top + bw + 3f * dk + len, p)
+                        c.drawLine(x, bounds.bottom - bw - 3f * dk, x, bounds.bottom - bw - 3f * dk - len, p)
                         x += step; i++
                     }
                     val tp = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                        typeface = Typeface.MONOSPACE; textSize = 7.5f * d; color = mulAlpha(dc, 0.85f)
+                        typeface = Typeface.MONOSPACE; textSize = 7.5f * dk; color = mulAlpha(dc, 0.85f)
                     }
-                    val ty = bounds.top + bw + 18f * d
+                    val ty = bounds.top + bw + 18f * dk
                     c.drawText("SYS//COUNTDOWN", bounds.left + ins, ty, tp)
                     tp.textAlign = Paint.Align.RIGHT
                     c.drawText("◢ LIVE", bounds.right - ins, ty, tp)
-                    content.top = max(content.top, ty + 4f * d)
-                    content.bottom = min(content.bottom, bounds.bottom - bw - 12f * d)
+                    content.top = max(content.top, ty + 4f * dk)
+                    content.bottom = min(content.bottom, bounds.bottom - bw - 12f * dk)
                 }
                 Decoration.TAPE -> {
                     val tw = bounds.width() * 0.32f
-                    val th = 16f * d
+                    val th = 16f * dk
                     val save = c.save()
                     c.rotate(-4f, bounds.centerX(), bounds.top)
                     p.color = dc
-                    c.drawRect(bounds.centerX() - tw / 2, bounds.top - th / 2 + 1f * d, bounds.centerX() + tw / 2, bounds.top + th / 2 + 1f * d, p)
+                    c.drawRect(bounds.centerX() - tw / 2, bounds.top - th / 2 + 1f * dk, bounds.centerX() + tw / 2, bounds.top + th / 2 + 1f * dk, p)
                     p.color = Color.argb(30, 255, 255, 255)
                     var x = bounds.centerX() - tw / 2
                     while (x < bounds.centerX() + tw / 2) {
-                        c.drawRect(x, bounds.top - th / 2 + 1f * d, x + 2f * d, bounds.top + th / 2 + 1f * d, p); x += 6f * d
+                        c.drawRect(x, bounds.top - th / 2 + 1f * dk, x + 2f * dk, bounds.top + th / 2 + 1f * dk, p); x += 6f * dk
                     }
                     c.restoreToCount(save)
-                    content.top = max(content.top, bounds.top + th / 2 + 4f * d)
+                    content.top = max(content.top, bounds.top + th / 2 + 4f * dk)
                 }
                 Decoration.PIXEL_CORNERS -> {
-                    val px = 3f * d
-                    val ins = bw + 4f * d + if (s.shape == WidgetShape.PIXEL) radius * 0.4f else 0f
+                    val px = 3f * dk
+                    val ins = bw + 4f * dk + if (s.shape == WidgetShape.PIXEL) radius * 0.4f else 0f
                     fun corner(x: Float, y: Float, sx: Int, sy: Int) {
                         val cells = listOf(0 to 0, 1 to 0, 2 to 0, 0 to 1, 0 to 2, 1 to 1)
                         for ((cx, cy) in cells) {
@@ -679,15 +686,15 @@ class WidgetRenderer(context: Context) {
                     corner(bounds.right - ins, bounds.bottom - ins, -1, -1)
                 }
                 Decoration.SIDE_STRIPE -> {
-                    val sw = 7f * d
+                    val sw = 7f * dk
                     val save = c.save()
                     c.clipPath(shapePath)
                     c.drawRect(bounds.left, bounds.top, bounds.left + sw, bounds.bottom, p)
                     c.restoreToCount(save)
-                    content.left = max(content.left, bounds.left + sw + s.padding * d * 0.8f)
+                    content.left = max(content.left, bounds.left + sw + s.padding * dk * 0.8f)
                 }
                 Decoration.WARNING_STRIPES -> {
-                    val bandH = min(9f * d, bounds.height() * 0.12f)
+                    val bandH = min(9f * dk, bounds.height() * 0.12f)
                     val save = c.save()
                     c.clipPath(shapePath)
                     for (top in floatArrayOf(bounds.top, bounds.bottom - bandH)) {
@@ -709,8 +716,8 @@ class WidgetRenderer(context: Context) {
                         c.restoreToCount(s2)
                     }
                     c.restoreToCount(save)
-                    content.top = max(content.top, bounds.top + bandH + s.padding * d * 0.5f)
-                    content.bottom = min(content.bottom, bounds.bottom - bandH - s.padding * d * 0.5f)
+                    content.top = max(content.top, bounds.top + bandH + s.padding * dk * 0.5f)
+                    content.bottom = min(content.bottom, bounds.bottom - bandH - s.padding * dk * 0.5f)
                 }
             }
             return content
