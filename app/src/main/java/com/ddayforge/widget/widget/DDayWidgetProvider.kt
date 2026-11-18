@@ -61,6 +61,19 @@ class DDayWidgetProvider : AppWidgetProvider() {
             ids.forEach { updateWidget(context, manager, it) }
         }
 
+        /**
+         * 런처가 위젯을 둥글게 잘라내는 반경(dp). 안드로이드 12+ 기본값을 쓰되,
+         * 런처마다 더 크게 자르는 경우가 있어 최소 20dp로 잡는다.
+         */
+        fun systemClipDp(context: Context): Float {
+            if (Build.VERSION.SDK_INT < 31) return 0f
+            val dm = context.resources.displayMetrics
+            val sys = runCatching {
+                context.resources.getDimension(android.R.dimen.system_app_widget_background_radius) / dm.density
+            }.getOrDefault(0f)
+            return maxOf(sys, 20f)
+        }
+
         /** 현재 위젯 크기(dp). 세로 모드 기준: 최소 너비 x 최대 높이 */
         fun widgetSizeDp(manager: AppWidgetManager, id: Int): Pair<Float, Float> {
             val o = manager.getAppWidgetOptions(id)
@@ -87,7 +100,7 @@ class DDayWidgetProvider : AppWidgetProvider() {
             val (wDp, hDp) = widgetSizeDp(manager, id)
             val density = context.resources.displayMetrics.density
             val bitmap = runCatching {
-                WidgetRenderer(context).render(style, content, wDp, hDp, density)
+                WidgetRenderer(context).render(style, content, wDp, hDp, density, systemClipDp(context))
             }.getOrNull()
 
             val views = RemoteViews(context.packageName, R.layout.widget_dday)

@@ -58,6 +58,7 @@ import com.ddayforge.widget.style.FontChoice
 import com.ddayforge.widget.style.StyleElement
 import com.ddayforge.widget.style.ThemePresets
 import com.ddayforge.widget.style.WidgetStyle
+import com.ddayforge.widget.widget.DDayWidgetProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -89,19 +90,26 @@ fun WidgetPreview(
     heightDp: Float,
     modifier: Modifier = Modifier,
     displayWidth: Dp = widthDp.dp,
+    /** 홈 화면 런처의 모서리 잘림까지 똑같이 보여줄지 */
+    simulateLauncherClip: Boolean = true,
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current.density
     val renderer = remember { WidgetRenderer(context) }
+    val clipDp = remember { if (simulateLauncherClip) DDayWidgetProvider.systemClipDp(context) else 0f }
     val bitmap by produceState<ImageBitmap?>(null, style, content, widthDp, heightDp) {
         value = withContext(Dispatchers.Default) {
-            renderer.render(style, content, widthDp, heightDp, density).asImageBitmap()
+            renderer.render(style, content, widthDp, heightDp, density, clipDp).asImageBitmap()
         }
     }
     val displayHeight = displayWidth * (heightDp / widthDp)
+    val shownClip = (clipDp * (displayWidth.value / widthDp)).coerceAtMost(minOf(displayWidth.value, displayHeight.value) / 2f)
     Box(modifier.size(displayWidth, displayHeight), contentAlignment = Alignment.Center) {
         bitmap?.let {
-            Image(it, contentDescription = content.count, contentScale = ContentScale.Fit, modifier = Modifier.size(displayWidth, displayHeight))
+            Image(
+                it, contentDescription = content.count, contentScale = ContentScale.Fit,
+                modifier = Modifier.size(displayWidth, displayHeight).clip(RoundedCornerShape(shownClip.dp)),
+            )
         }
     }
 }

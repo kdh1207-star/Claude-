@@ -69,6 +69,7 @@ private class Section(
 private val sections: List<Section> = listOf(
     Section("형태", { t, s -> t.copy(shape = s.shape, cornerRadius = s.cornerRadius, padding = s.padding) }) { st, set ->
         ElementChips(WidgetShape.entries, st.shape, { set(st.copy(shape = it)) })
+        LabeledSwitch("홈 화면 모서리 잘림 방지", st.clipGuard) { set(st.copy(clipGuard = it)) }
         LabeledSlider("모서리 크기", st.cornerRadius, 0f..60f, { set(st.copy(cornerRadius = it)) }) { "${it.toInt()}dp" }
         LabeledSlider("안쪽 여백", st.padding, 0f..40f, { set(st.copy(padding = it)) }) { "${it.toInt()}dp" }
     },

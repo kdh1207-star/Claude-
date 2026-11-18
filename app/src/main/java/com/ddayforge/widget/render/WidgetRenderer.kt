@@ -67,7 +67,18 @@ data class WidgetContent(
 class WidgetRenderer(context: Context) {
     private val appContext = context.applicationContext
 
-    fun render(style: WidgetStyle, content: WidgetContent, widthDp: Float, heightDp: Float, density: Float): Bitmap {
+    /**
+     * @param systemClipDp 런처가 위젯을 잘라내는 모서리 반경(dp). 0이면 잘림 없음.
+     *   style.clipGuard가 켜져 있으면 디자인이 이 둥근 영역 안에 들어오도록 안쪽으로 줄여 그린다.
+     */
+    fun render(
+        style: WidgetStyle,
+        content: WidgetContent,
+        widthDp: Float,
+        heightDp: Float,
+        density: Float,
+        systemClipDp: Float = 0f,
+    ): Bitmap {
         var d = density
         // 비트맵 메모리 제한 (RemoteViews 한도 대비 여유)
         val maxPixels = 1_600_000f
@@ -75,7 +86,7 @@ class WidgetRenderer(context: Context) {
         val w = max(1, (widthDp * d).toInt())
         val h = max(1, (heightDp * d).toInt())
         val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        Frame(Canvas(bmp), style, content, w.toFloat(), h.toFloat(), d).draw()
+        Frame(Canvas(bmp), style, content, w.toFloat(), h.toFloat(), d, if (style.clipGuard) systemClipDp else 0f).draw()
         return bmp
     }
 
@@ -87,6 +98,7 @@ class WidgetRenderer(context: Context) {
         val w: Float,
         val h: Float,
         val d: Float,
+        val systemClipDp: Float,
     ) {
         val bw = if (s.border == BorderStyle.NONE) 0f else s.borderWidth * d
         val offsetShadow = if (s.border == BorderStyle.OFFSET) bw * 1.5f + 2f * d else 0f
@@ -95,6 +107,26 @@ class WidgetRenderer(context: Context) {
             s.decoration == Decoration.TAPE -> 7f * d
             s.textEffect == TextEffect.GLOW && s.border == BorderStyle.NONE -> 2f * d
             else -> 1f * d
+        } + clipGuardInset()
+
+        /**
+         * 런처의 둥근 잘림(반경 R) 안에 이 위젯의 모서리(반경 r)가 다 들어오려면
+         * 가장자리에서 (R - r)(1 - 1/√2) 만큼 떨어져 있어야 한다.
+         */
+        fun clipGuardInset(): Float {
+            if (systemClipDp <= 0f) return 0f
+            val wDp = w / d
+            val hDp = h / d
+            val ownR = when (s.shape) {
+                WidgetShape.ROUNDED -> s.cornerRadius
+                WidgetShape.PILL -> min(wDp, hDp) / 2f
+                WidgetShape.CIRCLE -> return if (wDp == hDp) systemClipDp * 0.05f * d else 0f
+                WidgetShape.TICKET -> s.cornerRadius * 0.6f
+                WidgetShape.CHAMFER -> s.cornerRadius * 0.6f
+                else -> 0f
+            }
+            val clipR = min(systemClipDp, min(wDp, hDp) / 2f)
+            return max(0f, clipR - ownR) * (1f - 1f / sqrt(2f)) * d
         }
 
         val bounds: RectF = run {
@@ -743,37 +775,37 @@ class WidgetRenderer(context: Context) {
 
             when (layout) {
                 LayoutStyle.CLASSIC -> stack(area, listOfNotNull(
-                    title.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.labelColor, 0.17f * ls, true) },
-                    Line(count, s.numberFont, s.numberColor, 0.44f * ns, true, emphasize = s.emphasizeDigits),
-                    date.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.subColor, 0.12f * ls, false) },
+                    title.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.labelColor, 0.21f * ls, true) },
+                    Line(count, s.numberFont, s.numberColor, 0.58f * ns, true, emphasize = s.emphasizeDigits),
+                    date.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.subColor, 0.15f * ls, false) },
                 ), s.align)
                 LayoutStyle.LABEL_TOP -> stack(area, listOfNotNull(
-                    title.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.labelColor, 0.2f * ls, true) },
+                    title.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.labelColor, 0.24f * ls, true) },
                     Line("", s.labelFont, s.numberColor, 0.06f, false, divider = true),
-                    Line(count, s.numberFont, s.numberColor, 0.42f * ns, true, emphasize = s.emphasizeDigits),
-                    date.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.subColor, 0.11f * ls, false) },
+                    Line(count, s.numberFont, s.numberColor, 0.54f * ns, true, emphasize = s.emphasizeDigits),
+                    date.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.subColor, 0.14f * ls, false) },
                 ), s.align)
                 LayoutStyle.MINIMAL -> stack(area, listOfNotNull(
-                    Line(count, s.numberFont, s.numberColor, 0.62f * ns, true, emphasize = s.emphasizeDigits),
-                    title.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.labelColor, 0.14f * ls, false) },
+                    Line(count, s.numberFont, s.numberColor, 0.78f * ns, true, emphasize = s.emphasizeDigits),
+                    title.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.labelColor, 0.18f * ls, false) },
                 ), s.align)
                 LayoutStyle.TERMINAL -> stack(area, listOfNotNull(
-                    title.takeIf { it.isNotEmpty() }?.let { Line(s.promptPrefix + it, s.labelFont, s.labelColor, 0.15f * ls, true) },
-                    Line(count, s.numberFont, s.numberColor, 0.42f * ns, true, emphasize = s.emphasizeDigits),
+                    title.takeIf { it.isNotEmpty() }?.let { Line(s.promptPrefix + it, s.labelFont, s.labelColor, 0.2f * ls, true) },
+                    Line(count, s.numberFont, s.numberColor, 0.56f * ns, true, emphasize = s.emphasizeDigits),
                     (s.subPrefix + date + if (s.showCursor) "_" else "").trim().takeIf { it.isNotEmpty() }
-                        ?.let { Line(s.subPrefix + date + if (s.showCursor) "_" else "", s.labelFont, s.subColor, 0.12f * ls, false) },
+                        ?.let { Line(s.subPrefix + date + if (s.showCursor) "_" else "", s.labelFont, s.subColor, 0.16f * ls, false) },
                 ), s.align)
                 LayoutStyle.SPLIT -> {
                     val gap = area.width() * 0.05f
                     val left = RectF(area.left, area.top, area.left + area.width() * 0.5f - gap / 2, area.bottom)
                     val right = RectF(area.left + area.width() * 0.5f + gap / 2, area.top, area.right, area.bottom)
-                    stack(left, listOf(Line(count, s.numberFont, s.numberColor, 0.6f * ns, true, emphasize = s.emphasizeDigits)), TextAlign.CENTER)
+                    stack(left, listOf(Line(count, s.numberFont, s.numberColor, 0.78f * ns, true, emphasize = s.emphasizeDigits)), TextAlign.CENTER)
                     val dp = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = mulAlpha(s.numberColor, 0.4f); strokeWidth = max(1f, d) }
                     val cx = area.centerX()
                     c.drawLine(cx, area.top + area.height() * 0.15f, cx, area.bottom - area.height() * 0.15f, dp)
                     stack(right, listOfNotNull(
-                        title.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.labelColor, 0.22f * ls, true) },
-                        date.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.subColor, 0.14f * ls, false) },
+                        title.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.labelColor, 0.27f * ls, true) },
+                        date.takeIf { it.isNotEmpty() }?.let { Line(it, s.labelFont, s.subColor, 0.18f * ls, false) },
                     ), if (s.align == TextAlign.CENTER) TextAlign.START else s.align)
                 }
             }
@@ -782,7 +814,7 @@ class WidgetRenderer(context: Context) {
         /** 줄들을 세로로 쌓고, 영역에 맞게 크기를 자동 조절해 그린다. */
         fun stack(area: RectF, lines: List<Line>, align: TextAlign) {
             if (lines.isEmpty()) return
-            val gapRatio = 0.035f
+            val gapRatio = 0.025f
             // 1) 기본 크기 + 너비에 맞추기
             for (l in lines) {
                 l.resize(area.height() * l.ratio)

@@ -12,6 +12,8 @@ data class WidgetStyle(
     val shape: WidgetShape = WidgetShape.ROUNDED,
     val cornerRadius: Float = 20f, // dp
     val padding: Float = 14f, // dp
+    /** 홈 화면 런처의 둥근 모서리 잘림을 피하도록 안쪽으로 맞춤 */
+    val clipGuard: Boolean = true,
 
     // 배경
     val fill: BackgroundFill = BackgroundFill.SOLID,
