@@ -169,12 +169,18 @@ fun LabeledSwitch(label: String, checked: Boolean, onChange: (Boolean) -> Unit) 
     }
 }
 
-/** 모든 기본 테마에서 쓰인 색들 = 공유 팔레트 */
+/** 색 선택기의 빠른 팔레트: 기본 테마들에 쓰인 색 + 기본 색 */
 val SharedPalette: List<Int> by lazy {
-    ThemePresets.ALL.flatMap {
+    val fromThemes = ThemePresets.ALL.flatMap {
         val s = it.style
         listOf(s.bgColor, s.bgColor2, s.numberColor, s.labelColor, s.subColor, s.borderColor, s.textureColor, s.decorationColor, s.effectColor)
-    }.map { it or (0xFF shl 24) }.distinct() + listOf(0xFFFFFFFF.toInt(), 0xFF000000.toInt())
+    }
+    val basics = listOf(
+        0xFFFFFFFF, 0xFFBDBDBD, 0xFF616161, 0xFF2A2B30, 0xFF000000,
+        0xFFFF5252, 0xFFFF9800, 0xFFFFD23F, 0xFF66BB6A, 0xFF26C6DA,
+        0xFF42A5F5, 0xFF7E57C2, 0xFFEC407A,
+    ).map { it.toInt() }
+    (fromThemes + basics).map { it or (0xFF shl 24) }.distinct()
 }
 
 @Composable

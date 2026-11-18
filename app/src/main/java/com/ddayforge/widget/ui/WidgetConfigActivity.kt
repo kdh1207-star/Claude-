@@ -104,8 +104,8 @@ private fun ConfigScreen(
 
     var step by remember { mutableStateOf(if (existing != null && data.ddays.any { it.id == existing.ddayId }) 1 else 0) }
     var ddayId by remember { mutableStateOf(existing?.ddayId ?: data.ddays.firstOrNull()?.id) }
-    var style by remember { mutableStateOf(existing?.style ?: ThemePresets.DEFAULT.style) }
-    var themeId by remember { mutableStateOf(existing?.baseThemeId ?: ThemePresets.DEFAULT.id) }
+    var style by remember { mutableStateOf(existing?.style ?: ThemePresets.DEFAULT_STYLE) }
+    var themeId by remember { mutableStateOf<String?>(existing?.baseThemeId) }
     var creating by remember { mutableStateOf(false) }
     var savingTheme by remember { mutableStateOf(false) }
 

@@ -213,6 +213,13 @@ fun StyleEditor(
             "테마", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 6.dp),
         )
+        if (themes.isEmpty()) {
+            Text(
+                "아직 테마가 없어요. 아래에서 직접 꾸민 뒤 '내 테마로 저장'하면 여기에 나타나요.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+        }
         LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(themes, key = { it.id }) { t ->
                 val selected = t.id == selectedThemeId
@@ -263,7 +270,7 @@ private fun SectionCard(sec: Section, style: WidgetStyle, onChange: (WidgetStyle
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(sec.title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-            Box {
+            if (themes.isNotEmpty()) Box {
                 TextButton(onClick = { menu = true }) { Text("가져오기") }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     themes.forEach { t ->

@@ -91,7 +91,7 @@ class DDayWidgetProvider : AppWidgetProvider() {
         fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
             val config = Repository.widget(context, id)
             val dday = config?.let { Repository.findDDay(context, it.ddayId) }
-            val style = config?.style ?: ThemePresets.DEFAULT.style
+            val style = config?.style ?: ThemePresets.DEFAULT_STYLE
             val content = when {
                 config == null -> WidgetContent.placeholder()
                 dday == null -> WidgetContent.placeholder("디데이가 삭제됨 · 탭해서 변경")

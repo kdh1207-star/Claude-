@@ -156,6 +156,15 @@ private fun DDayListTab(ddays: List<DDay>, onEdit: (DDay) -> Unit, onDelete: (DD
 private fun ThemeGalleryTab(presets: List<Theme>, custom: List<Theme>, sample: DDay) {
     val context = LocalContext.current
     var confirmDelete by remember { mutableStateOf<Theme?>(null) }
+    if (presets.isEmpty() && custom.isEmpty()) {
+        Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+            Text(
+                "테마가 없어요.\n위젯 편집 화면에서 꾸민 뒤 '내 테마로 저장'하면 여기에 모여요.",
+                textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        return
+    }
     LazyVerticalGrid(
         columns = GridCells.Adaptive(160.dp),
         contentPadding = PaddingValues(12.dp),
